@@ -168,7 +168,15 @@ class Symfony extends Framework implements DoctrineProvider, PartedModule
             ini_set($xdebugMaxLevelKey, $maxNestingLevel);
         }
 
-        $this->kernel = new $this->kernelClass($this->config['environment'], $this->config['debug']);
+        $dotEnv = new \Symfony\Component\Dotenv\Dotenv();
+        $dotEnv->loadEnv(codecept_root_dir() . '/.env');
+
+        $_SERVER['APP_ENV'] = $_ENV['APP_ENV'] = ($_SERVER['APP_ENV'] ?? $_ENV['APP_ENV'] ?? null) ?: 'dev';
+        $_SERVER['APP_DEBUG'] = $_SERVER['APP_DEBUG'] ?? $_ENV['APP_DEBUG'] ?? 'prod' !== $_SERVER['APP_ENV'];
+        $_SERVER['APP_DEBUG'] = $_ENV['APP_DEBUG'] = (int) $_SERVER['APP_DEBUG'] || filter_var($_SERVER['APP_DEBUG'], FILTER_VALIDATE_BOOLEAN) ? '1' : '0';
+
+        $this->kernel = new $this->kernelClass($_SERVER['APP_ENV'], $_SERVER['APP_DEBUG']);
+
         $this->kernel->boot();
 
         if ($this->config['cache_router'] === true) {
